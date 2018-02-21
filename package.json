@@ -27,7 +27,7 @@
     "express": "^4.16.0",
     "jshint": "^2.9.5",
     "harbor-master": "^1.32.1",
-    "typescript": "^2.5.3",
+    "typescript": "^2.7.2",
     "body-parser": "^1.18.2",
     "tsconfig": "^7.0.0"
   }
