@@ -2,7 +2,8 @@ import docker = require("harbor-master");
 import express = require("express");
 import { ManagerConfiguration } from "./config";
 import { ContainerSet, Container } from "./container";
-import util = require("util")
+import util = require("util");
+import when = require("when");
 
 var dockerManagerApp = express();
 
@@ -74,24 +75,23 @@ interface DockerManagerInterface {
   /**
    * Create a new network. 
    * @param networkName Name for the new network.
-   * @param callback The callback to be invoked when everything is finished.
+   * @returns A promise of this operation.
    */
-  createNetwork(networkName: string, callback: (id: string, error: string) => void): void;
+  createNetwork(networkName: string): When.Promise<APIResult>;
 
   /**
    * Retrieve all network IDs with a particular name.
-   * @param networkName The network name to be checked
-   * @param callback The callback to be invoked when the network list is 
-   * retrieved.
+   * @param networkName The network name to be checked.
+   * @returns A promise of this operation.
    */
-  getNetworkId(networkName: string, callback: (networkIds: string[], error: string) => void) : void;
+  getNetworkId(networkName: string) : When.Promise<NetworkListItemModel[]>;
 
   /**
    * Remove a network. 
    * @param networkName Name for the new network.
    * @param callback The callback to be invoked when everything is finished.
    */
-  removeNetwork(networkId: string, callback: (id: string, error: string) => void): void;
+  removeNetwork(networkId: string) : when.Promise<number>;
 
   /**
    * Create a set of containers.
@@ -101,9 +101,7 @@ interface DockerManagerInterface {
    * @param callback The callback to be invoked if any error occurs. This
    * callback will be called for each container that was not properly created.
    */
-  createContainer(containerSet: ContainerSet, networkName: string,
-    failure: (container: Container, error: string) => void,
-    finished: (containers: ContainerSet) => void): void;
+  createContainer(containerSet: ContainerSet, networkName: string): When.Promise<{}>;
 
   /**
    * Start a container set. 
@@ -114,9 +112,7 @@ interface DockerManagerInterface {
    * @param finished The callback to be invoked when all containers were 
    * started.
    */
-  startContainer(containerSet: ContainerSet,
-    failure: (container: Container, error: string) => void,
-    finished: (containers: ContainerSet) => void): void
+  startContainer(containerSet: ContainerSet): When.Promise<{}>;
 
   /**
    * Kill a container set. 
@@ -127,9 +123,7 @@ interface DockerManagerInterface {
    * @param finished The callback to be invoked when all containers were 
    * killed.
    */
-  killContainer(containerSet: ContainerSet,
-    failure: (container: Container, error: string) => void,
-    finished: (containers: ContainerSet) => void): void
+  killContainer(containerSet: ContainerSet): When.Promise<{}>;
 
   /**
    * Setup and run a container set. 
@@ -148,11 +142,7 @@ interface DockerManagerInterface {
    * network or containers, while starting them up or after successfully
    * creating and starting all of them.
    */
-  setupAndRunContainerSet(containerSet: ContainerSet, networkName: string,
-    networkFailure: (networkName: string, error: string) => void,
-    createFailure: (container: Container, error: string) => void,
-    startFailure: (container: Container, error: string) => void,
-    finished: (containers: ContainerSet) => void): Result;
+  setupAndRunContainerSet(containerSet: ContainerSet, networkName: string): When.Promise<ContainerSet>;
 
   /**
    * Kill and remove a container set. 
@@ -171,10 +161,7 @@ interface DockerManagerInterface {
    * removing containers or during network removal. Also, it is called when
    * everything is removed successfully.
    */
-  killAndRemoveContainerSet(containerSetId: string,
-    killFailure: (container: Container, error: string) => void,
-    networkFailure: (networkName: string, error: string) => void,
-    finished: () => void): Result;
+  killAndRemoveContainerSet(containerSetId: string): When.Promise<number>;
 }
 
 
@@ -219,7 +206,7 @@ class DockerManager implements DockerManagerInterface {
     this.dockerClient = docker.Client(dockerConfig);
   }
 
-  createNetwork(networkName: string, callback: (id: string, error: string) => void): void {
+  createNetwork(networkName: string): When.Promise<APIResult> {
     let options = {}
     let model: NetworkModel = {
       Name: networkName,
@@ -227,51 +214,29 @@ class DockerManager implements DockerManagerInterface {
       CheckDuplicate: false
     }
     console.log("Creating network " + networkName + "...");
-    this.dockerClient.networks().create(model, options).then((networkData: APIResult) => {
-      console.log("... network was created.");
-      callback(networkData.Id, "");
-    }).catch((error: APIError) => {
-      console.log("... network was not created.");
-      if (error.response){
-      console.log("Returned status code: " + error.response.statusCode);}
-      console.log("Returned message: " + util.inspect(error.body, { depth: null }));
-      callback("", error.body);
-    });
+    return this.dockerClient.networks().create(model, options);
   }
 
-  getNetworkId(networkName: string, callback: (networkIds: string[], error: string) => void) : void {
+  getNetworkId(networkName: string) : When.Promise<NetworkListItemModel[]> {
     let options = {
       filters: "name=" + networkName
     }
-    this.dockerClient.networks().list(options).then((networkList: NetworkListItemModel[]) =>  { 
-      let networkIds: string[] = [];
-      for (let networkItem of networkList) {
-        networkIds.push(networkItem.Id);
-      }
-      callback(networkIds, "");
-    }).catch((error: APIError) => {
-      callback([], error.body);
-    })
+    return this.dockerClient.networks().list(options);
   }
 
-  removeNetwork(networkId: string, callback: (networkId: string, message: string) => void): void {
+  removeNetwork(networkId: string) : when.Promise<number> {
     let options = {}
     console.log("Removing network " + networkId + "...");
-    this.dockerClient.networks().remove(networkId).then((error: APIError) => {
-      console.log("... network was removed.");
-      callback(networkId, "");
-    }).catch((error: APIError) => {
-      console.log("... network was not removed.");
-      console.log("Returned status code: " + error.response.statusCode);
-      console.log("Returned message: " + util.inspect(error.body, { depth: null }));
-      callback("", error.body);
+    return this.dockerClient.networks().remove(networkId).then((value: any) => {
+      // Removing any parameter
+      return 0;
     });
   }
 
-  createContainer(containerSet: ContainerSet, networkName: string,
-    failure: (container: Container, error: string) => void,
-    finished: (containers: ContainerSet) => void): void {
 
+  // TODO check whether type is right
+  createContainer(containerSet: ContainerSet, networkName: string): When.Promise<Container[]> {
+    let containerCreationPromises: when.Promise<{}>[] = [];
     let options = {
       "name": ""
     }
@@ -300,63 +265,46 @@ class DockerManager implements DockerManagerInterface {
         Aliases: [container.name]
       }
 
-      console.log("Creating container " + container.name + "...")
-      this.dockerClient.containers().create(model, options, null).then((result: APIResult) => {
-        console.log("... container created (ID " + result.Id + ").");
+      console.log("Creating container " + container.name + "...");
+      let promise = this.dockerClient.containers().create(model, options, null).then((result: APIResult) => {
+        console.log("... container was created. ID is " + result.Id);
         container.isStarted = false;
         container.id = result.Id;
-        finishedContainers++;
-        if (finishedContainers == containerSet.containers.length) {
-          finished(containerSet);
-        }
-      }).catch((error: APIError) => {
+        return container;
+      }, (error: APIError) => {
         console.log("... container was not created.");
         console.log("Returned status code: " + error.response.statusCode);
         console.log("Returned message: " + util.inspect(error.body, { depth: null }));
-        finishedContainers++;
-        failure(container, error.body);
-        if (finishedContainers == containerSet.containers.length) {
-          finished(containerSet);
-        }
+        return container;
       });
-
+      containerCreationPromises.push(promise);
     }
+    return when.all(containerCreationPromises);
   }
 
-  startContainer(containerSet: ContainerSet,
-    failure: (container: Container, error: string) => void,
-    finished: (containers: ContainerSet) => void): void {
-
-    let finishedContainers = 0;
+  startContainer(containerSet: ContainerSet): When.Promise<Container[]> {
+    let containerPromises: When.Promise<{}>[] = [];
     for (let container of containerSet.containers) {
       console.log("Starting container " + container.name + "(ID " + container.id + ")...")
-      this.dockerClient.containers().start(container.id).then((result: APIResult) => {
-        console.log("... container was started.");
+      let promise = this.dockerClient.containers().start(container.id).then((result: APIResult) => {
+        console.log("... container " + container.id + " was started.");
         container.isStarted = true;
-        finishedContainers++;
-        if (finishedContainers == containerSet.containers.length) {
-          finished(containerSet);
-        }
-      }).catch((error: APIError) => {
-        finishedContainers++;
+        return container;
+      }, (error: APIError) => {
         if (error.response.statusCode != 204) {
-          console.log("... container was not started.");
+          console.log("... container " + container.id + " was not started.");
           console.log("Returned status code: " + error.response.statusCode);
           console.log("Returned message: " + util.inspect(error.body, { depth: null }));
-          failure(container, error.body);
         }
-        if (finishedContainers == containerSet.containers.length) {
-          finished(containerSet);
-        }
+        return container;
       });
+      containerPromises.push(promise);
     }
+    return when.all(containerPromises);
   }
 
-  killContainer(containerSet: ContainerSet,
-    failure: (container: Container, error: string) => void,
-    finished: (containers: ContainerSet) => void): void {
-
-    let finishedContainers = 0;
+  killContainer(containerSet: ContainerSet): When.Promise<Container[]> {
+    let containerPromises: When.Promise<Container>[] = [];
     for (let container of containerSet.containers) {
       if (container.id == undefined) {
         console.log("Container " + container.name + " has no ID. Skipping it.");
@@ -364,152 +312,124 @@ class DockerManager implements DockerManagerInterface {
       }
 
       console.log("Killing container " + container.name + "(ID " + container.id + ")...");
-      this.dockerClient.containers().kill(container.id).then((result: APIResult) => {
-        console.log("... container killed.");
+      let promise = this.dockerClient.containers().kill(container.id).then((result: APIResult) => {
+        console.log("... container was killed.");
         container.isStarted = false;
-        finishedContainers++;
-        if (finishedContainers == containerSet.containers.length) {
-          finished(containerSet);
-        }
-      }).catch((error: APIError) => {
-        finishedContainers++;
+        return container;
+      }, (error: APIError) => {
+        console.log("... container was not killed (supposedly).");
+        console.log("Returned status code: " + error.response.statusCode);
         if (error.response.statusCode != 204) {
           console.log("... container was not killed.");
           console.log("Returned status code: " + error.response.statusCode);
           console.log("Returned message: " + util.inspect(error.body, { depth: null }));
-          failure(container, error.body);
         }
-        if (finishedContainers == containerSet.containers.length) {
-          finished(containerSet);
-        }
+        return container;
       });
+      containerPromises.push(promise);
     }
+    return when.all(containerPromises);
   }
 
-  setupAndRunContainerSet(containerSet: ContainerSet, networkName: string,
-    userCreateNetworkFailureCbk: (networkName: string, error: string) => void,
-    userCreateContainerFailureCbk: (container: Container, error: string) => void,
-    userStartContainerFailureCbk: (container: Container, error: string) => void,
-    userFinishedCbk: (containers: ContainerSet) => void): Result {
+  setupAndRunContainerSet(containerSet: ContainerSet, networkName: string): When.Promise<ContainerSet> {
+    return when.promise((resolve, reject) => {
+      console.log("Configuring container set " + containerSet.name + "...");
+      console.log("Full configuration:");
+      console.log(util.inspect(containerSet, {depth:null}))
 
-    let ret: Result = {
-      code: 201,
-      message: "ok"
-    };
-
-    console.log("Configuring container set " + containerSet.name + "...");
-    console.log("Full configuration:");
-    console.log(util.inspect(containerSet, {depth:null}))
-    let failedContainers: string[] = [];
-
-    let createContainerFailureCbk = (container: Container, error: string) => {
-      failedContainers.push(container.name);
-      userCreateContainerFailureCbk(container, error);
-    }
-
-    let startContainerFailureCbk = (container: Container, error: string) => {
-      failedContainers.push(container.name);
-      userStartContainerFailureCbk(container, error);
-    }
-
-    let startContainerCbk = (containers: ContainerSet) => {
-      console.log("... container set was configured.");
-      userFinishedCbk(containers);
-    }
-
-    let createContainerCbk = (containers: ContainerSet) => {
-      if (failedContainers.length != 0) {
-        console.log("... container set was not fully configured.");
-        userFinishedCbk(containers);
-      } else {
-        this.startContainer(containers, startContainerFailureCbk,
-          startContainerCbk);
+      let startContainerResolve = (value: Container[]) => {
+        console.log("... container set was configured.");
+        resolve(containerSet);
       }
-    }
 
-    let createNetworkCbk = (networkId: string, error: string) => {
-      if (error != "") {
-        console.log("... container set was not fully configured.");
-        userCreateNetworkFailureCbk(networkId, error);
-        userFinishedCbk(containerSet);
-      } else {
-        containerSet.network = networkId;
-        this.createContainer(containerSet, networkId,
-          createContainerFailureCbk, createContainerCbk);
+      let startContainerError = (error: APIError) => {
+        console.log("... container set was started.");
+        console.log("Error is " + util.inspect(error, {depth: null}));
+        reject("Container was not started.");
       }
-    }
 
-    let getNetworkIdsCbk = (networkIds: string[], error: string) => {
-      if (error == "") {
-        // Network exists
-        if (networkIds.length == 1) {
-          this.createContainer(containerSet, networkIds[0],
-            createContainerFailureCbk, createContainerCbk);
+      let createContainerResolve = (value: Container[]) => {
+        this.startContainer(containerSet).done(startContainerResolve, startContainerError);
+      }
+
+      let createContainerError = (error: APIError) => {
+        console.log("... container set was not fully configured.");
+        console.log("Error is " + util.inspect(error, {depth: null}));
+        reject("Container was not initialized.");
+      }
+
+      let createNetworkResolve = (value: APIResult) => {
+        containerSet.network = value.Id;
+        this.createContainer(containerSet, value.Id).done(createContainerResolve, createContainerError);
+      }
+
+      let createNetworkError = (error: APIError) => {
+        console.log("... can't create new network.");
+        console.log("Error is " + util.inspect(error, {depth: null}));
+        reject("Can't create network " + networkName);
+      }
+
+      let getNetworkIdResolve = (value: NetworkListItemModel[]) => {
+        if (value.length == 1) {
+          this.createContainer(containerSet, value[0].Id).done(createContainerResolve, createContainerError);
         } else {
-          userCreateNetworkFailureCbk(networkName, "More than one network with this name.")
-          userFinishedCbk(containerSet);
-          return ret;
+          console.log("... more than one network with same name.");
+          reject("More than one network with same name " + networkName);
         }
-      } else {
-        // Network doesn't exist
-        this.createNetwork(networkName, createNetworkCbk);
       }
-    }
+      let getNetworkIdError = (error: APIError) => {
+        console.log("... network does not yet exist.");
+        console.log("Error is " + util.inspect(error, {depth: null}));
+        console.log("Creating a new one.");
+        this.createNetwork(networkName).done(createNetworkResolve, createNetworkError);
+      }
 
-    this.getNetworkId(networkName, getNetworkIdsCbk);
-    this.containerSetCache[containerSet.id] = containerSet;
-    return ret;
+      this.containerSetCache[containerSet.id] = containerSet;
+      this.getNetworkId(networkName).done(getNetworkIdResolve, getNetworkIdError);
+    });
   }
 
-  killAndRemoveContainerSet(containerSetId: string,
-    userkillFailureCbk: (container: Container, error: string) => void,
-    userNetworkFailureCbk: (networkName: string, error: string) => void,
-    userFinishedCbk: () => void): Result {
-
-    let ret: Result = {
-      code: 201,
-      message: "ok"
-    };
-   
+  killAndRemoveContainerSet(containerSetId: string): When.Promise<number> {
+    return when.promise((resolve, reject) => {
     // Sanity checks
     if (!(containerSetId in this.containerSetCache)) {
-      ret.code = 404;
-      ret.message = "There is no container set with this ID";
-      return ret;
+      reject("There is no container set with ID " + containerSetId);
     }
     // End of sanity checks
     
-    let failedContainers: string[] = [];
     let containerSet = this.containerSetCache[containerSetId];
 
     console.log("Killing and removing container set " + containerSet.name + "...");
 
-    let killContainerFailureCbk = (container: Container, error: string) => {
-      failedContainers.push(container.name);
-      userkillFailureCbk(container, error);
-    }
-
-    let removeNetworkCbk = (networkId: string, message: string) => {
-      if (message != "") {
-        userNetworkFailureCbk(networkId, message);
-      }
+    let removeNetworkResolve = (value: any) => {
       console.log("... container set was killed and removed.");
-      userFinishedCbk();
+      resolve(0);
     }
 
-    let killContainerCbk = (containers: ContainerSet) => {
-      if (failedContainers.length != 0) {
-        console.log("... container set was not fully killed and removed.");
-        userFinishedCbk();
+    let removeNetworkError = (error: APIError) => {
+      console.log("... can't remove network.");
+      console.log("Error is " + util.inspect(error, {depth: null}));
+      reject("Can't remove network " + containerSet.network);
+    }
+
+    let killContainerResolve = (value: any) => {
+      console.log("... all containers were killed.");
+      if (containerSet.network != undefined) {
+        this.removeNetwork(containerSet.network).done(removeNetworkResolve, removeNetworkError);
       } else {
-        if (containerSet.network != undefined) {
-          this.removeNetwork(containerSet.network, removeNetworkCbk);
-        }
+        console.log("There is no network to be removed.");
+        resolve(0);
       }
     }
 
-    this.killContainer(containerSet, killContainerFailureCbk, killContainerCbk);
-    return ret;
+    let killContainerError = (error: APIError) => {
+      console.log("... can't kill container.");
+      console.log("Error is " + util.inspect(error, {depth: null}));
+      reject("Can't kill container.");
+    }
+
+    this.killContainer(containerSet).done(killContainerResolve, killContainerError);
+  });
   }
 }
 
