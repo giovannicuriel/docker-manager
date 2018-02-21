@@ -384,7 +384,11 @@ class DockerManager implements DockerManagerInterface {
         this.createNetwork(networkName).done(createNetworkResolve, createNetworkError);
       }
 
-      this.containerSetCache[containerSet.id] = containerSet;
+      if (containerSet.id in this.containerSetCache) {
+        this.containerSetCache[containerSet.id].containers = this.containerSetCache[containerSet.id].containers.concat(containerSet.containers);
+      } else {
+        this.containerSetCache[containerSet.id] = containerSet;
+      }
       this.getNetworkId(networkName).done(getNetworkIdResolve, getNetworkIdError);
     });
   }
