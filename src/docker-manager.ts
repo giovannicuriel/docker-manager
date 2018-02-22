@@ -4,6 +4,7 @@ import { ManagerConfiguration } from "./config";
 import { ContainerSet, Container } from "./container";
 import util = require("util");
 import when = require("when");
+import { ContainerManagerInterface } from "./container-manager";
 
 var dockerManagerApp = express();
 
@@ -68,107 +69,11 @@ class Result {
   "message": string;
 }
 
-/**
- * Interface for docker functions
- */
-interface DockerManagerInterface {
-  /**
-   * Create a new network. 
-   * @param networkName Name for the new network.
-   * @returns A promise of this operation.
-   */
-  createNetwork(networkName: string): When.Promise<APIResult>;
-
-  /**
-   * Retrieve all network IDs with a particular name.
-   * @param networkName The network name to be checked.
-   * @returns A promise of this operation.
-   */
-  getNetworkId(networkName: string) : When.Promise<NetworkListItemModel[]>;
-
-  /**
-   * Remove a network. 
-   * @param networkName Name for the new network.
-   * @param callback The callback to be invoked when everything is finished.
-   */
-  removeNetwork(networkId: string) : when.Promise<number>;
-
-  /**
-   * Create a set of containers.
-   * @param containers The list of containers to be created
-   * @param networkName The name of the network which will be associated to the
-   * new containers.
-   * @param callback The callback to be invoked if any error occurs. This
-   * callback will be called for each container that was not properly created.
-   */
-  createContainer(containerSet: ContainerSet, networkName: string): When.Promise<{}>;
-
-  /**
-   * Start a container set. 
-   * All containers should have a Container ID.
-   * @param containerSet The container set to be started
-   * @param failure The callback to be invoked when something is not right. This
-   * callback will be invoked for each container which has a problem.
-   * @param finished The callback to be invoked when all containers were 
-   * started.
-   */
-  startContainer(containerSet: ContainerSet): When.Promise<{}>;
-
-  /**
-   * Kill a container set. 
-   * All containers should have a Container ID.
-   * @param containerSet The container set to be killed
-   * @param failure The callback to be invoked when something is not right. This
-   * callback will be invoked for each container which has a problem.
-   * @param finished The callback to be invoked when all containers were 
-   * killed.
-   */
-  killContainer(containerSet: ContainerSet): When.Promise<{}>;
-
-  /**
-   * Setup and run a container set. 
-   * Create the necessary network, create containers and start all of them.
-   * @param containerSet The container set to be started
-   * @param networkFailure A callback to be invoked when there is a network
-   * configuration failure. If this callback is used, then no further action
-   * is taken.
-   * @param createFailure A callback to be invoked when there is a problem
-   * while creating the containers. If this callback is used, then no container
-   * is started.
-   * @param startFailure A callback to be invoked when there is a problem
-   * while starting the containers. 
-   * @param finished A callback to be invoked then there is no further action
-   * to be taken. This could be: if there was a problem while creating the
-   * network or containers, while starting them up or after successfully
-   * creating and starting all of them.
-   */
-  setupAndRunContainerSet(containerSet: ContainerSet, networkName: string): When.Promise<ContainerSet>;
-
-  /**
-   * Kill and remove a container set. 
-   * Kill all containers, remove them and their network
-   * @param containerSet The container set to be started
-   * @param killFailure A callback to be invoked when there is a problem
-   * while killing the containers. If this callback is used, then no container
-   * is started.
-   * @param removeFailure A callback to be invoked when there is a problem
-   * while removing the containers. 
-   * @param networkFailure A callback to be invoked when there is a network
-   * configuration failure. If this callback is used, then no further action
-   * is taken.
-   * @param finished A callback to be invoked then there is no further action
-   * to be taken. This could be: if there was a problem while killing or 
-   * removing containers or during network removal. Also, it is called when
-   * everything is removed successfully.
-   */
-  killAndRemoveContainerSet(containerSetId: string): When.Promise<number>;
-}
-
 
 /**
  * Implementation of DockerManagerEndpointsInterface using express library
  */
-class DockerManager implements DockerManagerInterface {
+class DockerManager implements ContainerManagerInterface {
   private port: number;
   private dockerClient: any;
   private containerSetCache: {
@@ -437,5 +342,5 @@ class DockerManager implements DockerManagerInterface {
   }
 }
 
-export { DockerManagerInterface }
+export { ContainerManagerInterface }
 export { DockerManager }

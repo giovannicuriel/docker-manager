@@ -29,6 +29,8 @@
     "express": "^4.16.0",
     "harbor-master": "^1.32.1",
     "jshint": "^2.9.5",
+    "kubernetes-client": "^4.0.0",
+    "node-kubernetes-client": "^0.3.2",
     "tsconfig": "^7.0.0",
     "typescript": "^2.7.2",
     "when": "^3.7.8"

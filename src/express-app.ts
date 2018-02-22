@@ -1,7 +1,7 @@
 import * as express from "express";
 import { Request, Response, NextFunction } from "express-serve-static-core";
 import {ManagerConfiguration} from "./config";
-import { DockerManagerInterface } from "./docker-manager"
+import { ContainerManagerInterface } from "./docker-manager"
 import { Container, ContainerSet } from "./container"
 import { authParse, authEnforce } from "./auth-middleware";
 import bodyParser = require("body-parser");
@@ -24,9 +24,9 @@ interface StopCmdResponse {
  */
 class ExpressApp {
   private app: express.Express;
-  private dockerManager: DockerManagerInterface;
+  private dockerManager: ContainerManagerInterface;
 
-  constructor(config: ManagerConfiguration, manager: DockerManagerInterface) {
+  constructor(config: ManagerConfiguration, manager: ContainerManagerInterface) {
     this.app = express();
     this.app.use(authParse);
     this.app.use(authEnforce);
