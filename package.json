@@ -1,0 +1,36 @@
+{
+  "name": "docker-manager",
+  "version": "1.0.0",
+  "description": "A simplified HTTP interface for docker's remote APIs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node build/main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://giovannicuriel.github.com/docker-manager"
+  },
+  "keywords": [
+    "docker",
+    "management",
+    "dojot"
+  ],
+  "author": "Giovanni Curiel dos Santos (giovannicuriel@gmail.com)",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "@types/body-parser": "^1.16.5",
+    "@types/express": "^4.0.37",
+    "@types/node": "^9.4.2",
+    "@types/when": "^2.4.29",
+    "body-parser": "^1.18.2",
+    "eslint": "^4.7.2",
+    "express": "^4.16.0",
+    "harbor-master": "^1.32.1",
+    "jshint": "^2.9.5",
+    "tsconfig": "^7.0.0",
+    "typescript": "^2.7.2",
+    "when": "^3.7.8"
+  }
+}
