@@ -6,8 +6,6 @@ import util = require("util");
 import when = require("when");
 import { ContainerManagerInterface } from "./container-manager";
 
-var dockerManagerApp = express();
-
 // These classes should be placed in Harbor-Master definitions, not here.
 class ContainerModel {
   "Image": string;
@@ -85,30 +83,34 @@ class DockerManager implements ContainerManagerInterface {
    * @param config The configuration to be used
    */
   constructor(config: ManagerConfiguration) {
+    console.log("Using docker driver.");
     this.port = config.port;
     let dockerConfig: any = {};
     this.containerSetCache = {};
-    switch (config.docker.type) {
-      case "socket":
-        if (config.docker.socket) {
-          dockerConfig["socket"] = config.docker.socket;
-        } else {
-          // Throw exception or return error
-        }
-        break;
-      case "swarm":
-        if (config.docker.swarm) {
-          dockerConfig["host"] = config.docker.swarm.host;
-          dockerConfig["port"] = config.docker.swarm.port;
-        } else {
-          // Throw exception or return error
-        }
-        break;
+    if (config.engine == "docker" && config.docker) {
+      switch (config.docker.type) {
+        case "socket":
+          if (config.docker.socket) {
+            dockerConfig["socket"] = config.docker.socket;
+          } else {
+            // Throw exception or return error
+          }
+          break;
+        case "swarm":
+          if (config.docker.swarm) {
+            dockerConfig["host"] = config.docker.swarm.host;
+            dockerConfig["port"] = config.docker.swarm.port;
+          } else {
+            // Throw exception or return error
+          }
+          break;
+      }
+      // This might not be defined, but that's ok.
+      dockerConfig["tls"] = config.docker.tls;
+      this.dockerClient = docker.Client(dockerConfig);
+    } else {
+      // Throw exception or return error
     }
-    // This might not be defined, but that's ok.
-    dockerConfig["tls"] = config.docker.tls;
-
-    this.dockerClient = docker.Client(dockerConfig);
   }
 
   createNetwork(networkName: string): When.Promise<APIResult> {

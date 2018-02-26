@@ -32,7 +32,13 @@ class KubernetesManager implements ContainerManagerInterface {
   host: string;
 
   constructor(config: ManagerConfiguration) {
-    this.host = config.kubernetes.url;
+    console.log("Using kubernetes driver.");
+    if (config.engine == "kubernetes" && config.kubernetes) {
+      this.host = config.kubernetes.url;
+    } else {
+      // Throw exception or return error
+      this.host = "";
+    }
   }
 
   setupAndRunContainerSet(containerSet: ContainerSet, namespace: string): When.Promise<ContainerSet> {

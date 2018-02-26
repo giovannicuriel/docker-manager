@@ -1,4 +1,7 @@
 import { ContainerSet } from "./container";
+import { ManagerConfiguration } from "./config";
+import { DockerManager } from "./docker-manager";
+import { KubernetesManager } from "./kubernetes-manager";
 
 /**
  * Interface for docker functions
@@ -18,4 +21,16 @@ interface ContainerManagerInterface {
 }
 
 
+class ContainerManagerFactory {
+  static create(config: ManagerConfiguration) : ContainerManagerInterface{
+    switch (config.engine) {
+      case "docker":
+        return new DockerManager(config);
+      case "kubernetes":
+        return new KubernetesManager(config);
+    }
+  }
+}
+
 export { ContainerManagerInterface }
+export { ContainerManagerFactory }

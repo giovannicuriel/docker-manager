@@ -50,10 +50,14 @@ interface ManagerConfiguration {
   /** Network port on which this manager will listen for requests. */
   port: number;
 
-  /** Docker remote API configuration */
-  docker: DockerAPIConfiguration;
+  /** Engine */
+  engine: "docker" | "kubernetes";
 
-  kubernetes: KubernetesConfiguration;
+  /** Docker remote API configuration */
+  docker?: DockerAPIConfiguration;
+
+  /** Kubernetes API configuration */
+  kubernetes?: KubernetesConfiguration;
 }
 
 export { ManagerConfiguration }
