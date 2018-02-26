@@ -12,7 +12,7 @@ interface DockerSwarmConfiguration {
 /**
  * Configuration for Docker TLS access
  */
-interface DockerTLSConfiguration { 
+interface TLSConfiguration { 
   /** CA certificate (filename) */
   ca: string;
   /** Entity certificate (filename) */
@@ -21,6 +21,13 @@ interface DockerTLSConfiguration {
   key: string;
   /** Key passphrase (if needed) */
   passphrase: string;
+}
+
+
+interface KubernetesConfiguration {
+  url: string;
+  version?: string;
+  tls?: TLSConfiguration
 }
 
 /**
@@ -36,15 +43,21 @@ interface DockerAPIConfiguration {
   swarm?: DockerSwarmConfiguration;
 
   /** If TLS is needed, this is its configuration */
-  tls?: DockerTLSConfiguration;
+  tls?: TLSConfiguration;
 }
 
 interface ManagerConfiguration {
   /** Network port on which this manager will listen for requests. */
   port: number;
 
+  /** Engine */
+  engine: "docker" | "kubernetes";
+
   /** Docker remote API configuration */
-  docker: DockerAPIConfiguration;
+  docker?: DockerAPIConfiguration;
+
+  /** Kubernetes API configuration */
+  kubernetes?: KubernetesConfiguration;
 }
 
 export { ManagerConfiguration }

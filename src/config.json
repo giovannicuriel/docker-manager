@@ -1,0 +1,11 @@
+{
+  "port": 5000,
+  "engine": "kubernetes",
+  "docker": {
+    "type": "socket",
+    "socket": "/var/run/docker.sock"
+  },
+  "kubernetes": {
+    "url": "http://localhost:8080"
+  }
+}
