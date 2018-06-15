@@ -27,7 +27,7 @@ interface TLSConfiguration {
 interface KubernetesConfiguration {
   url: string;
   version?: string;
-  tls?: TLSConfiguration
+  token: string;
 }
 
 /**

@@ -4,7 +4,8 @@ import Api = require("kubernetes-client");
 import { ManagerConfiguration } from "./config";
 import util = require("util");
 import when = require("when");
-
+import yaml = require("js-yaml");
+import fs = require("fs");
 
 interface K8sMetadata {
   [attribute : string] : any;
@@ -30,19 +31,23 @@ interface ContainerTemplate {
 
 class KubernetesManager implements ContainerManagerInterface {
   host: string;
-
+  token: string;
   constructor(config: ManagerConfiguration) {
     console.log("Using kubernetes driver.");
     if (config.engine == "kubernetes" && config.kubernetes) {
-      this.host = config.kubernetes.url;
+        this.host = config.kubernetes.url;
+        this.token = config.kubernetes.token;
     } else {
       // Throw exception or return error
-      this.host = "";
+        this.token = "";
+        this.host = "";
     }
   }
 
   setupAndRunContainerSet(containerSet: ContainerSet, namespace: string): When.Promise<ContainerSet> {
     return when.promise((resolve, reject) => {
+      console.log(`Setting up and running containers...`);
+      console.log(`Container set is: ${util.inspect(containerSet, {depth: null})}`);
       let deploymentObj: K8sManifest = {
         apiVersion: "extensions/v1beta1",
         kind: "Deployment",
@@ -68,21 +73,34 @@ class KubernetesManager implements ContainerManagerInterface {
           }
         }
       }
-
+      console.log(`Adding all containers`);
       for (let container of containerSet.containers) {
+          console.log(`Adding container ${container.name} to the set...`);
           let containerTemplate: ContainerTemplate = {
             name: container.name,
             image: container.image,
             imagePullPolicy: "Never"
           }
           deploymentObj.spec.template.spec.containers.push(containerTemplate);
+          console.log(`... container ${container.name} was added to the set.`);
       }
-      const ext = new Api.Extensions({
-        url: this.host,
-        version: 'v1beta1'  // Defaults to 'v1beta1'
-      });
 
-      ext.namespaces!("default").deployments!.post({ body: deploymentObj}, (error, value) => {
+      console.log(`Creating request...`);
+      const apiGroupOptions: Api.ApiGroupOptions = {
+        url: this.host,
+        version: 'v1beta1',  // Defaults to 'v1beta1',
+        auth: {
+          bearer: this.token
+        },
+        insecureSkipTlsVerify: true,
+      }
+
+      const ext = new Api.Extensions(apiGroupOptions);
+      console.log(`API group options: ${util.inspect(apiGroupOptions, {depth: null})}`);
+      console.log(`... request created.`);
+
+      console.log(`Sending request to server...`);
+      ext.namespaces!("dojot").deployments!.post({ body: deploymentObj}, (error, value) => {
         console.log("Error: " + util.inspect(error, {depth: null}));
         console.log("Value: " + util.inspect(value, {depth: null}));
         if (error == null) {
@@ -91,6 +109,7 @@ class KubernetesManager implements ContainerManagerInterface {
           reject(error);
         }
       });
+      console.log(`... request was sent to the server.`);
     });
   }
 
@@ -101,7 +120,7 @@ class KubernetesManager implements ContainerManagerInterface {
         version: 'v1beta1'  // Defaults to 'v1beta1'
       });
 
-      ext.namespaces!("default").deployments!(containerSetId).delete({ }, (error, value) => {
+      ext.namespaces!("dojot").deployments!(containerSetId).delete({ }, (error, value) => {
         console.log("Error: " + util.inspect(error, {depth: null}));
         console.log("Value: " + util.inspect(value, {depth: null}));
         if (error == null) {

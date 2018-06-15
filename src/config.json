@@ -6,6 +6,7 @@
     "socket": "/var/run/docker.sock"
   },
   "kubernetes": {
-    "url": "http://localhost:8080"
+    "url": "https://10.50.11.18:6443",
+    "token": "eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJkb2pvdCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJmbG93YnJva2VyLXNlY3JldCIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJmbG93YnJva2VyIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiYmZkMGQ3ZGMtNzBiZi0xMWU4LTgwOGEtNTI1NDAwMTcxNTNkIiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OmRvam90OmZsb3dicm9rZXIifQ.UmGGkQ4ulY2Ko-wc2BMIhx2QL5u0LfhDjQC--TfURZxd5weqWYDqvU3jQjW5Hm_La1CTWKYTJ1bivsVWKLf7IXYe6OQO4kWghLj7T-2acgjRZhQPscUpw3QY-n1O_bcBEoxwfQiS6vr4m0lOOGISQET9-Epu305FGuDyZXZaPnhaRQTwyLGLBNhmp7FnBGHtzTes90QbyHtuDtw1pIzf_C72LOQ_U_QjirhE4b-Krp17jRdUDXjso0ljRt5Xxc6_a29jQXI4A7DWcRGNn6I8rpOvkzuNYPq0eVOHjnRhusmW1L7WFNUqLDUMKj5psw5jga9_oEshkjcgS_w9boh_AQ"
   }
 }
